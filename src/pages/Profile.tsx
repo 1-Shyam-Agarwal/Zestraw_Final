@@ -18,6 +18,7 @@ const Profile = () => {
     const [profileData, setProfileData] = useState({
         fullName: user?.fullName || "",
         email: user?.email || "",
+        phoneNumber: user?.phoneNumber || "",
         shippingAddress: {
             address: user?.shippingAddress?.address || "",
             city: user?.shippingAddress?.city || "",
@@ -36,7 +37,6 @@ const Profile = () => {
     const sidebarLinks = [
         { icon: <Leaf size={14} />, label: "Impact Tracker", href: "/dashboard" },
         { icon: <Truck size={14} />, label: "Track Orders", href: "/orders" },
-        { icon: <Recycle size={14} />, label: "Subscriptions", href: "/dashboard" },
         { icon: <Shield size={14} />, label: "Profile Settings", href: "/profile" },
     ];
 
@@ -68,7 +68,7 @@ const Profile = () => {
                 <div className="grid grid-cols-1 lg:grid-cols-[280px_1fr] gap-8">
                     {/* Sidebar */}
                     <aside className="hidden lg:block">
-                        <div className="bg-card border border-border rounded-2xl p-6 sticky top-24 shadow-sm">
+                        <div className="bg-white border border-border rounded-2xl p-6 sticky top-24 z-10 shadow-sm">
                             <div className="flex items-center gap-3 mb-8 px-2">
                                 <div className="w-10 h-10 rounded-full bg-primary flex items-center justify-center text-white font-bold">
                                     {user?.fullName?.[0] || 'U'}
@@ -121,7 +121,23 @@ const Profile = () => {
                                     <div className="space-y-1">
                                         <label className="text-[9px] font-bold uppercase tracking-wider text-muted-foreground/80 px-1">Email Address</label>
                                         <div className="relative">
-                                            <Input disabled value={profileData.email} className="bg-neutral-50 border-neutral-200/60 rounded-xl h-10 cursor-not-allowed opacity-70 font-medium text-sm" />
+                                            <Input disabled value={profileData.email || "Not Provided"} className="bg-neutral-50 border-neutral-200/60 rounded-xl h-10 cursor-not-allowed opacity-70 font-medium text-sm" />
+                                            {profileData.email && (
+                                                <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                                                    <CheckCircle2 size={12} className="text-primary/40" />
+                                                </div>
+                                            )}
+                                        </div>
+                                    </div>
+                                    <div className="space-y-1">
+                                        <label className="text-[9px] font-bold uppercase tracking-wider text-muted-foreground/80 px-1">Phone Number</label>
+                                        <div className="relative">
+                                            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs text-muted-foreground font-bold opacity-50">+91</span>
+                                            <Input
+                                                disabled
+                                                value={profileData.phoneNumber}
+                                                className="pl-10 bg-neutral-50 border-neutral-200/60 rounded-xl h-10 cursor-not-allowed opacity-70 font-medium text-sm"
+                                            />
                                             <div className="absolute right-3 top-1/2 -translate-y-1/2">
                                                 <CheckCircle2 size={12} className="text-primary/40" />
                                             </div>

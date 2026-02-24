@@ -1,12 +1,13 @@
 import { useState, useEffect } from "react";
 import { Navbar } from "@/components/Navbar";
 import { Footer } from "@/components/Footer";
-import { Package, Truck, CheckCircle, Clock, ChevronRight, Leaf, X, Shield, CreditCard, Building, Recycle } from "lucide-react";
+import { Package, Truck, CheckCircle, Clock, ChevronRight, Leaf, X, Shield, CreditCard, Building, Recycle, MessageCircle } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 import { getUserOrders } from "@/services/operations/orderAPI";
 import { Link, useLocation } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { getProductImageSrc } from "@/lib/images";
+import { getDeliveryDate } from "@/lib/utils";
 
 const Orders = () => {
     const { token, user } = useAuth();
@@ -18,7 +19,6 @@ const Orders = () => {
     const sidebarLinks = [
         { icon: <Leaf size={14} />, label: "Impact Tracker", href: "/dashboard" },
         { icon: <Truck size={14} />, label: "Track Orders", href: "/orders" },
-        { icon: <Recycle size={14} />, label: "Subscriptions", href: "/dashboard" },
         { icon: <Shield size={14} />, label: "Profile Settings", href: "/profile" },
     ];
 
@@ -58,7 +58,7 @@ const Orders = () => {
                 <div className="grid grid-cols-1 lg:grid-cols-[280px_1fr] gap-8">
                     {/* Sidebar */}
                     <aside className="hidden lg:block">
-                        <div className="bg-card border border-border rounded-2xl p-6 sticky top-24">
+                        <div className="bg-white border border-border rounded-2xl p-6 sticky top-24 z-10 shadow-sm">
                             <div className="flex items-center gap-3 mb-8 px-2">
                                 <div className="w-10 h-10 rounded-full bg-primary flex items-center justify-center text-white font-bold">
                                     {user?.fullName?.[0] || 'U'}
@@ -113,13 +113,17 @@ const Orders = () => {
                                                         <Package className="text-primary" size={28} />
                                                     </div>
                                                     <div>
-                                                        <div className="text-sm font-bold text-foreground">Order #{order._id?.toString().slice(-8).toUpperCase()}</div>
+                                                        <div className="text-sm font-bold text-eco-green">Order #{order._id?.toString().slice(-8).toUpperCase()}</div>
                                                         <div className="text-xs text-muted-foreground">Placed on {new Date(order.createdAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}</div>
                                                     </div>
                                                 </div>
                                                 <div className="flex items-center gap-4">
                                                     <div className={`flex items-center gap-1.5 px-4 py-1.5 rounded-full border text-[10px] font-black uppercase tracking-widest ${getStatusColor(order.status)}`}>
-                                                        {getStatusIcon(order.status)} {order.status}
+                                                        {order.status === "Processing" ? (
+                                                            <><Truck size={14} /> Delivery: {getDeliveryDate(2)}</>
+                                                        ) : (
+                                                            <>{getStatusIcon(order.status)} {order.status}</>
+                                                        )}
                                                     </div>
                                                     <div className="text-right">
                                                         <div className="text-lg font-black text-foreground">₹{order.totalPrice.toFixed(2)}</div>
@@ -143,9 +147,17 @@ const Orders = () => {
                                             </div>
                                         </div>
                                         <div className="bg-muted/20 px-6 py-4 flex justify-between items-center border-t border-border/50">
-                                            <p className="text-[11px] text-muted-foreground font-bold italic">
-                                                Shipping to: <span className="font-black text-foreground uppercase">{order.shippingAddress.city}</span>
-                                            </p>
+                                            <div className="flex flex-col gap-1">
+                                                <p className="text-[11px] text-muted-foreground font-bold italic">
+                                                    Shipping to: <span className="font-black text-foreground uppercase">{order.shippingAddress.city}</span>
+                                                </p>
+                                                <button
+                                                    onClick={() => window.dispatchEvent(new CustomEvent('toggleChatbot'))}
+                                                    className="text-[10px] font-black text-primary uppercase tracking-widest hover:underline flex items-center gap-1.5"
+                                                >
+                                                    <MessageCircle size={12} strokeWidth={3} /> Have a doubt? Chat with Zestie
+                                                </button>
+                                            </div>
                                             <button
                                                 onClick={() => setSelectedOrder(order)}
                                                 className="text-xs font-black text-primary uppercase tracking-widest hover:underline flex items-center gap-1"
@@ -209,7 +221,7 @@ const Orders = () => {
                                     <div className="p-4 rounded-2xl bg-muted/30 border border-border">
                                         <p className="text-[10px] uppercase font-black text-muted-foreground mb-2">Status</p>
                                         <div className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-tighter border ${getStatusColor(selectedOrder.status)}`}>
-                                            {selectedOrder.status}
+                                            {selectedOrder.status === "Processing" ? `Delivery by ${getDeliveryDate(2)}` : selectedOrder.status}
                                         </div>
                                     </div>
                                     <div className="p-4 rounded-2xl bg-muted/30 border border-border">
@@ -261,6 +273,9 @@ const Orders = () => {
                                         </h4>
                                         <div className="space-y-1.5 text-sm flex-1">
                                             <p className="font-black text-foreground">{user?.fullName}</p>
+                                            <p className="text-[11px] text-muted-foreground font-black uppercase tracking-tighter">
+                                                {user?.email || user?.phoneNumber}
+                                            </p>
                                             <p className="text-muted-foreground font-medium leading-relaxed italic">
                                                 {selectedOrder.shippingAddress.address}<br />
                                                 {selectedOrder.shippingAddress.city}, {selectedOrder.shippingAddress.state} {selectedOrder.shippingAddress.zip}<br />

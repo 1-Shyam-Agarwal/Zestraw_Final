@@ -58,7 +58,8 @@ export default function ProductCard({ product }: ProductCardProps) {
                         <img
                             src={productImage.startsWith('http') ? productImage : getProductImageSrc(productImage)}
                             alt={productName}
-                            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                            className={`w-full h-full object-cover transition-transform duration-300 ${product.category === 'Cutlery' ? 'scale-125 group-hover:scale-[1.35]' : 'group-hover:scale-105'
+                                }`}
                         />
                     </div>
                     <div className="p-4 flex flex-col gap-2">

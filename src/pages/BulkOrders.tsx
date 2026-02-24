@@ -2,7 +2,7 @@ import { Layout } from "@/components/Layout";
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import { useState } from "react";
-import { useToast } from "@/hooks/use-toast";
+import { toast } from "sonner";
 import { ChevronRight, Leaf, Truck, BarChart3 } from "lucide-react";
 import wholesaleHero from "@/assets/bulkorder.webp";
 
@@ -23,27 +23,49 @@ export default function BulkOrdersPage() {
     volume: "", leadTime: "", products: [] as string[], customDesign: false, brandingReqs: "",
   });
   const [loading, setLoading] = useState(false);
-  const { toast } = useToast();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!formData.businessName || !formData.email || !formData.fullName) {
-      toast({ title: "Please fill in required fields", variant: "destructive" });
-      return;
-    }
 
-    if (!validateEmail(formData.email)) {
-      toast({
-        title: "Invalid Email",
-        description: "Please enter a valid work email address.",
-        variant: "destructive"
+    // Basic required field validation
+    if (!formData.businessName || !formData.fullName || !formData.email || !formData.volume) {
+      toast.error("Incomplete Inquiry", {
+        description: "Please provide your business name, contact info, and expected volume."
       });
       return;
     }
+
+    // Email format validation
+    if (!validateEmail(formData.email)) {
+      toast.error("Invalid Business Email", {
+        description: "Please enter a valid work email address (e.g., name@company.com).",
+      });
+      return;
+    }
+
+    // Product selection validation
+    if (formData.products.length === 0) {
+      toast.error("Product Interest Required", {
+        description: "Please select at least one product category you are interested in."
+      });
+      return;
+    }
+
     setLoading(true);
+    // Simulate enterprise API call
     await new Promise(r => setTimeout(r, 2000));
     setLoading(false);
-    toast({ title: "Inquiry submitted!", description: "Our enterprise team will get back to you within 24 hours.", variant: "success" });
+
+    toast.success("Inquiry Submitted Successfully!", {
+      description: "Our enterprise team will review your proposal and contact you within 24 hours.",
+      duration: 5000
+    });
+
+    // Reset form after success
+    setFormData({
+      businessName: "", businessType: "", fullName: "", email: "",
+      volume: "", leadTime: "", products: [], customDesign: false, brandingReqs: "",
+    });
   };
 
   const toggleProduct = (product: string) => {

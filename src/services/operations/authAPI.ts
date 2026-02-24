@@ -166,7 +166,7 @@ export async function login(email, password, navigate, setAuth) {
     });
     try {
         const response = await apiConnector("POST", LOGIN_API, {
-            email,
+            identifier: email, // Reusing variable name 'email' as the identifier
             password,
         });
 
@@ -183,6 +183,18 @@ export async function login(email, password, navigate, setAuth) {
         navigate("/");
     } catch (error) {
         const errorMessage = error.response?.data?.error || error.message || "Login failed. Please check your email and password.";
+
+        // If user is not registered, redirect to signup
+        if (error.response?.status === 404 || errorMessage.toLowerCase().includes("not registered")) {
+            toast.error("Account Not Found", {
+                id: toastId,
+                description: "This email isn't registered yet. Redirecting you to sign up...",
+                duration: 4000
+            });
+            setTimeout(() => navigate("/signup"), 1500);
+            return;
+        }
+
         toast.error("Authentication Error", {
             id: toastId,
             description: errorMessage,
@@ -196,7 +208,8 @@ export async function signUp(
     email,
     password,
     accountType,
-    navigate
+    navigate,
+    phoneNumber
 ) {
     const toastId = toast.loading("Creating your account...", {
         description: "This will only take a second."
@@ -207,6 +220,7 @@ export async function signUp(
             email,
             password,
             accountType,
+            phoneNumber
         });
 
         if (!response.data.success) {

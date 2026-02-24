@@ -24,7 +24,7 @@ export async function createOrder(token, orderData, navigate, clearCart) {
         });
 
         clearCart();
-        navigate("/dashboard"); // Redirect to dashboard to see tracking
+        navigate("/orders"); // Redirect to orders to see tracking
         return response.data.data;
     } catch (error) {
         const errorMessage = error.response?.data?.error || error.message || "Failed to place order";

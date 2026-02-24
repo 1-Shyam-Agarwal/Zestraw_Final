@@ -18,10 +18,12 @@ import ProductDetails from "./pages/ProductDetails";
 import NotFound from "./pages/NotFound";
 import Marketplace from "./pages/Marketplace";
 import ProtectedRoute from "./components/auth/ProtectedRoute";
+import ScrollToTop from "./components/ScrollToTop";
 import Dashboard from "./pages/dashboard";
 import Orders from "./pages/Orders";
 import Profile from "./pages/Profile";
 import OpenRoute from "./components/auth/OpenRoute";
+import Chatbot from "./components/Chatbot";
 
 const queryClient = new QueryClient();
 
@@ -33,6 +35,8 @@ const App = () => {
           <CartProvider>
             <Sonner position="top-right" closeButton richColors />
             <BrowserRouter>
+              <ScrollToTop />
+              <Chatbot />
               <Routes>
                 <Route path="/" element={<Index />} />
                 <Route path="/shop" element={<Shop />} />

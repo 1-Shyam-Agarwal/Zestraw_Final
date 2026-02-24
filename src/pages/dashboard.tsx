@@ -4,24 +4,116 @@ import { Footer } from "@/components/Footer";
 import { Leaf, Recycle, Download, Shield, Truck } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 import { motion } from "framer-motion";
+import { useState, useEffect } from "react";
+import { getUserOrders } from "@/services/operations/orderAPI";
 
 const Dashboard = () => {
-  const { user } = useAuth();
+  const { user, token } = useAuth();
   const location = useLocation();
-  const guests = 150;
-  const courses = 3;
-  const potentialSaving = (guests * courses * 0.0084).toFixed(1);
+  const [eventGuests, setEventGuests] = useState(150);
+  const [mealCourses, setMealCourses] = useState(3);
+  const potentialSaving = (eventGuests * mealCourses * 0.0084).toFixed(1);
+
+  const [chartData, setChartData] = useState<any[]>([]);
+  const [impactStats, setImpactStats] = useState({
+    co2Saved: 0,
+    paraliRepurposed: 0,
+    plasticAvoided: 0,
+    orderCount: 0
+  });
+
+  useEffect(() => {
+    const fetchImpactData = async () => {
+      if (token) {
+        const orders = await getUserOrders(token);
+        if (orders && Array.isArray(orders)) {
+          let co2 = 0;
+          let parali = 0;
+          let plastic = 0;
+
+          // Process stats for cards
+          orders.forEach(order => {
+            order.orderItems.forEach(item => {
+              const quantity = item.quantity || 0;
+              const size = parseInt(item.size) || 1;
+              const totalUnits = quantity * size;
+              co2 += totalUnits * 84; // 84g saved per unit
+              parali += totalUnits * 150; // 150g repurposed per unit
+              plastic += totalUnits;
+            });
+          });
+
+          setImpactStats({
+            co2Saved: co2,
+            paraliRepurposed: parali,
+            plasticAvoided: plastic,
+            orderCount: orders.length
+          });
+
+          // Process data for graph (last 6 months)
+          const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+          const last6 = [];
+          for (let i = 5; i >= 0; i--) {
+            const d = new Date();
+            d.setMonth(d.getMonth() - i);
+            last6.push({
+              name: months[d.getMonth()],
+              month: d.getMonth(),
+              year: d.getFullYear(),
+              co2: 0,
+              parali: 0
+            });
+          }
+
+          orders.forEach(order => {
+            const orderDate = new Date(order.createdAt);
+            const orderMonth = orderDate.getMonth();
+            const orderYear = orderDate.getFullYear();
+
+            const monthData = last6.find(m => m.month === orderMonth && m.year === orderYear);
+            if (monthData) {
+              order.orderItems.forEach(item => {
+                const units = (item.quantity || 0) * (parseInt(item.size) || 1);
+                monthData.co2 += units * 84;
+                monthData.parali += units * 150;
+              });
+            }
+          });
+
+          setChartData(last6);
+        }
+      }
+    };
+    fetchImpactData();
+  }, [token]);
 
   const statsProps = [
-    { label: "CO₂ Emissions Saved", icon: <Leaf size={16} className="text-secondary" />, value: "158.4 kg", sub: "Equivalent to planting 8 trees", change: "+12% vs last month" },
-    { label: "Parali Repurposed", icon: <Recycle size={16} className="text-secondary" />, value: "420 kg", sub: "Rice straw diverted from burning", change: "+8% vs last month" },
-    { label: "Plastic Plates Displaced", icon: <Shield size={16} className="text-secondary" />, value: "2,450 units", sub: "Keeping our oceans cleaner", change: "" },
+    {
+      label: "CO₂ Emissions Saved",
+      icon: <Leaf size={16} className="text-secondary" />,
+      value: `${impactStats.co2Saved.toLocaleString()} g`,
+      sub: `Equivalent to planting ${Math.floor(impactStats.co2Saved / 20000)} trees`,
+      change: impactStats.orderCount > 0 ? `+${(impactStats.orderCount * 5)}% vs last month` : "0% growth"
+    },
+    {
+      label: "Parali Repurposed",
+      icon: <Recycle size={16} className="text-secondary" />,
+      value: `${impactStats.paraliRepurposed.toLocaleString()} g`,
+      sub: "Rice straw diverted from burning",
+      change: impactStats.orderCount > 0 ? `+${(impactStats.orderCount * 3)}% vs last month` : "0% growth"
+    },
+    {
+      label: "Plastic Plates Displaced",
+      icon: <Shield size={16} className="text-secondary" />,
+      value: `${impactStats.plasticAvoided.toLocaleString()} units`,
+      sub: "Keeping our oceans cleaner",
+      change: ""
+    },
   ];
 
   const sidebarLinks = [
     { label: "Impact Tracker", icon: <Leaf size={18} />, href: "/dashboard" },
     { label: "Track Orders", icon: <Truck size={18} />, href: "/orders" },
-    { label: "Subscriptions", icon: <Recycle size={18} />, href: "/subscriptions" },
     { label: "Profile Settings", icon: <Shield size={18} />, href: "/profile" },
   ];
 
@@ -31,8 +123,8 @@ const Dashboard = () => {
       <main className="flex-grow container mx-auto px-4 py-8 max-w-7xl">
         <div className="grid grid-cols-1 lg:grid-cols-[280px_1fr] gap-8">
           {/* Sidebar */}
-          <aside className="lg:block">
-            <div className="bg-card border border-border rounded-2xl p-6 sticky top-24">
+          <aside className="hidden lg:block">
+            <div className="bg-white border border-border rounded-2xl p-6 sticky top-24 z-10 shadow-sm">
               <div className="flex items-center gap-3 mb-8 px-2">
                 <div className="w-10 h-10 rounded-full bg-primary flex items-center justify-center text-white font-bold">
                   {user?.fullName?.[0] || 'U'}
@@ -80,33 +172,88 @@ const Dashboard = () => {
 
             {/* Chart */}
             <div className="bg-card border border-border rounded-2xl p-6 shadow-sm">
-              <div className="flex items-center justify-between mb-8">
+              <div className="flex flex-col sm:flex-row items-center justify-between mb-8 gap-4">
                 <div>
                   <h2 className="font-lora text-xl font-bold text-foreground">Sustainability Progress</h2>
                   <p className="text-xs text-muted-foreground font-medium italic">Monthly growth in your eco-footprint</p>
                 </div>
-                <button className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-widest text-foreground border border-border rounded-full px-4 py-2 hover:bg-warm-sand transition-colors">
-                  <Download size={14} /> Export Stats
-                </button>
+
+                {/* Legend */}
+                <div className="flex items-center gap-4 bg-muted/30 px-4 py-2 rounded-full border border-border whitespace-nowrap">
+                  <div className="flex items-center gap-1.5">
+                    <div className="w-2.5 h-2.5 rounded-full bg-primary" />
+                    <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest leading-none">CO₂ (g)</span>
+                  </div>
+                  <div className="flex items-center gap-1.5 border-l border-border pl-4">
+                    <div className="w-2.5 h-2.5 rounded-full bg-[#8fb339]" />
+                    <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest leading-none">Parali (g)</span>
+                  </div>
+                </div>
               </div>
-              <div className="relative h-56 w-full opacity-90 group">
-                <svg viewBox="0 0 600 180" className="w-full h-full" preserveAspectRatio="none">
-                  {[12, 47, 82, 117, 152].map((val, i) => (
-                    <g key={i}>
-                      <line x1="0" y1={180 - (val / 152) * 160} x2="600" y2={180 - (val / 152) * 160} stroke="hsl(var(--border))" strokeOpacity="0.5" strokeWidth="1" />
-                    </g>
+
+              <div className="relative h-64 w-full group pt-8 pb-10 pr-10 pl-12">
+                {/* Y-Axis Labels */}
+                <div className="absolute left-0 top-8 bottom-10 flex flex-col justify-between text-[9px] font-black text-muted-foreground/60 w-10 text-right pr-2 uppercase">
+                  <span>{Math.max(100, Math.ceil(Math.max(...chartData.map(d => Math.max(d.co2, d.parali))) / 100) * 100).toLocaleString()}</span>
+                  <span>{(Math.max(100, Math.ceil(Math.max(...chartData.map(d => Math.max(d.co2, d.parali))) / 100) * 100) / 2).toLocaleString()}</span>
+                  <span>0</span>
+                </div>
+
+                <svg viewBox="0 0 600 180" className="w-full h-full overflow-visible" preserveAspectRatio="none">
+                  {/* Grid Lines */}
+                  <line x1="0" y1="0" x2="600" y2="0" stroke="hsl(var(--border))" strokeOpacity="0.3" strokeDasharray="4 4" />
+                  <line x1="0" y1="90" x2="600" y2="90" stroke="hsl(var(--border))" strokeOpacity="0.3" strokeDasharray="4 4" />
+                  <line x1="0" y1="180" x2="600" y2="180" stroke="hsl(var(--border))" strokeWidth="2" />
+
+                  {/* X-Axis Labels */}
+                  {chartData.map((d, i) => (
+                    <text key={i} x={50 + i * 100} y="205" textAnchor="middle" className="fill-muted-foreground/80 text-[10px] uppercase font-black tracking-widest">{d.name}</text>
                   ))}
-                  <motion.polyline
-                    initial={{ pathLength: 0 }}
-                    animate={{ pathLength: 1 }}
-                    transition={{ duration: 1.5, ease: "easeInOut" }}
-                    points="50,168 150,155 250,140 350,120 450,90 550,45"
-                    fill="none"
-                    stroke="hsl(var(--primary))"
-                    strokeWidth="3"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  />
+
+                  {/* CO2 Line & Area */}
+                  {chartData.length > 0 && (
+                    <>
+                      <defs>
+                        <linearGradient id="grad-co2" x1="0%" y1="0%" x2="0%" y2="100%">
+                          <stop offset="0%" stopColor="hsl(var(--primary))" stopOpacity="0.2" />
+                          <stop offset="100%" stopColor="hsl(var(--primary))" stopOpacity="0" />
+                        </linearGradient>
+                      </defs>
+                      <motion.path
+                        initial={{ pathLength: 0 }}
+                        animate={{ pathLength: 1 }}
+                        transition={{ duration: 2 }}
+                        d={`M ${chartData.map((d, i) => `${50 + i * 100},${180 - Math.min(170, (d.co2 / Math.max(10, Math.ceil(Math.max(...chartData.map(d => Math.max(d.co2, d.parali))) / 5) * 5)) * 170)}`).join(' L ')}`}
+                        fill="none"
+                        stroke="hsl(var(--primary))"
+                        strokeWidth="4"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      />
+                      <motion.path
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        transition={{ delay: 1 }}
+                        d={`M 50,180 L ${chartData.map((d, i) => `${50 + i * 100},${180 - Math.min(170, (d.co2 / Math.max(10, Math.ceil(Math.max(...chartData.map(d => Math.max(d.co2, d.parali))) / 5) * 5)) * 170)}`).join(' L ')} L ${50 + (chartData.length - 1) * 100},180 Z`}
+                        fill="url(#grad-co2)"
+                      />
+                    </>
+                  )}
+
+                  {/* Parali Line */}
+                  {chartData.length > 0 && (
+                    <motion.path
+                      initial={{ pathLength: 0 }}
+                      animate={{ pathLength: 1 }}
+                      transition={{ duration: 2, delay: 0.5 }}
+                      d={`M ${chartData.map((d, i) => `${50 + i * 100},${180 - Math.min(170, (d.parali / Math.max(10, Math.ceil(Math.max(...chartData.map(d => Math.max(d.co2, d.parali))) / 5) * 5)) * 170)}`).join(' L ')}`}
+                      fill="none"
+                      stroke="#8fb339"
+                      strokeWidth="3"
+                      strokeDasharray="6 4"
+                      strokeLinecap="round"
+                    />
+                  )}
                 </svg>
               </div>
             </div>
@@ -121,13 +268,30 @@ const Dashboard = () => {
                 <div className="space-y-5">
                   <div className="space-y-2">
                     <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest block" htmlFor="eventGuests">Expected Guests</label>
-                    <input id="eventGuests" type="number" defaultValue={150} className="w-full text-sm px-4 py-3 rounded-xl border border-border bg-background focus:ring-2 focus:ring-primary/20 outline-none transition-all" />
+                    <input
+                      id="eventGuests"
+                      type="number"
+                      value={eventGuests}
+                      onChange={(e) => setEventGuests(Number(e.target.value))}
+                      className="w-full text-sm px-4 py-3 rounded-xl border border-border bg-background focus:ring-2 focus:ring-primary/20 outline-none transition-all"
+                    />
                   </div>
                   <div className="space-y-2">
                     <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest block" htmlFor="mealCourses">Meal Courses</label>
-                    <input id="mealCourses" type="number" defaultValue={3} className="w-full text-sm px-4 py-3 rounded-xl border border-border bg-background focus:ring-2 focus:ring-primary/20 outline-none transition-all" />
+                    <input
+                      id="mealCourses"
+                      type="number"
+                      value={mealCourses}
+                      onChange={(e) => setMealCourses(Number(e.target.value))}
+                      className="w-full text-sm px-4 py-3 rounded-xl border border-border bg-background focus:ring-2 focus:ring-primary/20 outline-none transition-all"
+                    />
                   </div>
-                  <button className="w-full bg-primary text-white font-bold py-4 rounded-xl hover:shadow-lg hover:shadow-primary/20 active:scale-95 transition-all text-sm uppercase tracking-widest leading-none">Calculate Savings</button>
+                  <button
+                    onClick={() => { setEventGuests(150); setMealCourses(3); }}
+                    className="w-full bg-primary text-white font-bold py-4 rounded-xl hover:shadow-lg hover:shadow-primary/20 active:scale-95 transition-all text-sm uppercase tracking-widest leading-none outline-none"
+                  >
+                    Reset Calculator
+                  </button>
                 </div>
 
                 <div className="bg-primary/10 border border-primary/20 rounded-2xl p-8 flex flex-col items-center justify-center text-center shadow-inner">

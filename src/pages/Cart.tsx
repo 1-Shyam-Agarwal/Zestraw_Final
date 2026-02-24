@@ -9,7 +9,8 @@ import { getProductImageSrc } from "@/lib/images";
 import { updateShippingAddress } from "@/services/operations/authAPI";
 import { createOrder } from "@/services/operations/orderAPI";
 import { useState, useEffect } from "react";
-import { useToast } from "@/hooks/use-toast";
+import { toast } from "sonner";
+import { getDeliveryDate } from "@/lib/utils";
 
 export default function CartPage() {
   const { items, updateQuantity, removeItem, subtotal, totalItems, clearCart } = useCart();
@@ -19,7 +20,6 @@ export default function CartPage() {
   const [promoError, setPromoError] = useState("");
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [showOrderConfirmModal, setShowOrderConfirmModal] = useState(false);
-  const { toast } = useToast();
   const navigate = useNavigate();
 
   // Checkout form state
@@ -28,6 +28,7 @@ export default function CartPage() {
     firstName: "",
     lastName: "",
     email: "",
+    phoneNumber: "",
     address: "",
     city: "",
     state: "",
@@ -44,6 +45,7 @@ export default function CartPage() {
         ...prev,
         firstName: user.fullName || "",
         email: user.email || "",
+        phoneNumber: user.phoneNumber || "",
         address: user.shippingAddress?.address || "",
         city: user.shippingAddress?.city || "",
         state: user.shippingAddress?.state || "",
@@ -63,7 +65,7 @@ export default function CartPage() {
       return;
     }
     if (!address.address || !address.city || !address.state || !address.zip) {
-      toast({ title: "Please fill all address fields", variant: "destructive" });
+      toast.error("Missing Address Info", { description: "Please provide a complete shipping address." });
       return;
     }
 
@@ -99,7 +101,10 @@ export default function CartPage() {
       return;
     }
     if (!address.firstName || !address.email || !address.address || !address.city || !address.state || !address.zip) {
-      toast({ title: "Please fill in all shipping details", variant: "destructive" });
+      toast.error("Information Incomplete", {
+        description: "Please fill in all shipping details to proceed with your eco-friendly order.",
+        duration: 4000
+      });
       return;
     }
     setShowOrderConfirmModal(true);
@@ -279,11 +284,13 @@ export default function CartPage() {
                               </div>
                             </div>
                             <div>
-                              <label className="text-[10px] uppercase tracking-widest font-bold text-muted-foreground mb-1.5 block">Email Address</label>
+                              <label className="text-[10px] uppercase tracking-widest font-bold text-muted-foreground mb-1.5 block">
+                                {address.email ? "Email Address" : "Phone Number"}
+                              </label>
                               <div className="relative group">
                                 <input
-                                  type="email"
-                                  value={address.email}
+                                  type="text"
+                                  value={address.email || address.phoneNumber}
                                   readOnly
                                   className="w-full px-4 py-2.5 text-sm border border-border rounded-lg bg-neutral-100 text-muted-foreground cursor-not-allowed focus:outline-none transition-all pr-10"
                                 />
@@ -342,7 +349,7 @@ export default function CartPage() {
                               <span className="px-2 py-0.5 bg-primary text-white text-[9px] font-bold rounded">ECO-SAFE</span>
                             </div>
                             <p className="font-bold text-sm">Carbon-Neutral</p>
-                            <p className="text-xs text-muted-foreground mt-1">100% Offset transportation. Arrival in 4-6 days.</p>
+                            <p className="text-xs text-muted-foreground mt-1">100% Offset transportation. Arrival by {getDeliveryDate(4)}.</p>
                             <p className="text-sm font-bold mt-2">₹40.00</p>
                           </button>
                           <button
@@ -399,7 +406,7 @@ export default function CartPage() {
                       <div className="p-3 rounded-lg bg-[#fdfaf5] border border-[#f5eadc]">
                         <span className="text-sm font-medium font-lora">Standard Eco-Delivery</span>
                         <span className="ml-2 px-2 py-0.5 bg-orange-100 text-orange-700 text-[10px] rounded-full font-bold">₹40.00</span>
-                        <p className="text-xs text-muted-foreground mt-1 font-lora">Expected: 3-5 business days</p>
+                        <p className="text-xs text-muted-foreground mt-1 font-lora">Expected: {getDeliveryDate(2)} - {getDeliveryDate(4)}</p>
                       </div>
                     </div>
                     <div className="bg-card rounded-xl border border-border p-5">
@@ -676,9 +683,15 @@ export default function CartPage() {
                 <div className="bg-amber-50 border border-amber-100 rounded-xl p-4 mb-4 text-left">
                   <div className="flex gap-3">
 
-                    <div>
-                      <p className="text-xs font-bold text-amber-900 uppercase tracking-wider mb-1">Total Amount Payable</p>
-                      <p className="text-xl font-bold text-amber-900">₹{totalAmount.toFixed(2)}</p>
+                    <div className="flex justify-between items-center">
+                      <div>
+                        <p className="text-xs font-bold text-amber-900 uppercase tracking-wider mb-1">Total Payable</p>
+                        <p className="text-xl font-bold text-amber-900">₹{totalAmount.toFixed(2)}</p>
+                      </div>
+                      <div className="text-right border-l border-amber-200 pl-4">
+                        <p className="text-[10px] font-bold text-amber-600 uppercase tracking-wider mb-1">Estimated Arrival</p>
+                        <p className="text-sm font-black text-amber-900">{getDeliveryDate(2)}</p>
+                      </div>
                     </div>
                   </div>
                 </div>

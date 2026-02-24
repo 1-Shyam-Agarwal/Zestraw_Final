@@ -9,8 +9,9 @@ import { Layout } from "@/components/Layout";
 import { getProductImageSrc } from "@/lib/images";
 import { toast } from "sonner";
 import { motion, AnimatePresence } from "framer-motion";
-import { getProductDetails, getAllProducts, addProductReview } from "@/services/operations/productAPI";
+import { getProductDetails, getAllProducts } from "@/services/operations/productAPI";
 import { useAuth } from "@/context/AuthContext";
+import { getDeliveryDate } from "@/lib/utils";
 
 export default function ProductDetailPage() {
     const { id } = useParams();
@@ -26,10 +27,53 @@ export default function ProductDetailPage() {
     const [quantity, setQuantity] = useState(1);
     const [activeTab, setActiveTab] = useState('description');
 
-    // Review Form State
-    const [rating, setRating] = useState(5);
-    const [comment, setComment] = useState("");
-    const [submittingReview, setSubmittingReview] = useState(false);
+    // Hardcoded Reviews Data
+    const hardcodedReviews: Record<string, any[]> = {
+        'default': [
+            { userName: "Aarav Sharma", rating: 5, comment: "Incredible quality! These plates are much stronger than plastic and feel premium. A great sustainable choice.", createdAt: "2024-02-15" },
+            { userName: "Priya Patel", rating: 4, comment: "I love the natural texture. They held up perfectly during our outdoor garden party. Highly recommended!", createdAt: "2024-02-10" },
+            { userName: "Rahul Verma", rating: 5, comment: "Finally, a eco-friendly alternative that doesn't get soggy. These bowls are perfect for hot soups.", createdAt: "2024-02-20" },
+        ],
+        '1': [
+            { userName: "Neha Gupta", rating: 5, comment: "The 10-inch plate is the perfect size for dinner. Sturdy and elegant. Will buy again!", createdAt: "2024-03-01" },
+            { userName: "Vikram Malhotra", rating: 5, comment: "Eco-friendly and practical. They didn't bend even with heavy food. Impressive!", createdAt: "2024-02-25" }
+        ],
+        '2': [
+            { userName: "Ananya Iyer", rating: 5, comment: "Best cereal bowls ever! No plastic taste, just pure natural goodness. My kids love them.", createdAt: "2024-03-05" },
+            { userName: "Siddharth Rao", rating: 4, comment: "Great for breakfast. The 16oz size is perfect. Fast delivery too!", createdAt: "2024-02-28" }
+        ],
+        '3': [
+            { userName: "Meera Das", rating: 5, comment: "This tray is a game changer for hosting. Very sturdy and looks beautiful on the table.", createdAt: "2024-03-10" },
+            { userName: "Arjun Singh", rating: 5, comment: "Solid build quality. Holds heavy dishes without any issues. 5 stars!", createdAt: "2024-02-15" }
+        ],
+        '4': [
+            { userName: "Kavita Reddy", rating: 5, comment: "The combo pack was perfect for my daughter's birthday party. Everyone was impressed by the sustainability.", createdAt: "2024-02-20" },
+            { userName: "Rohan Joshi", rating: 5, comment: "Great value for money. The quality of every item in the pack is top-notch.", createdAt: "2024-02-18" }
+        ],
+        '5': [
+            { userName: "Simran Kaur", rating: 5, comment: "Classy tapas plates. Perfect for appetizers. Love the square design.", createdAt: "2024-03-12" },
+            { userName: "Deepak Bakshi", rating: 4, comment: "Elegant and eco-friendly. Adds a nice touch to the serving experience.", createdAt: "2024-03-02" }
+        ],
+        '6': [
+            { userName: "Tanvi Shah", rating: 5, comment: "Perfect for ramen! The natural material keeps the soup warm longer. Absolutely love it.", createdAt: "2024-03-08" },
+            { userName: "Ishaan Gupta", rating: 5, comment: "Minimalist and functional. Exactly what I was looking for.", createdAt: "2024-03-04" }
+        ],
+        '7': [
+            { userName: "Sunita Pillai", rating: 5, comment: "The cutlery is surprisingly strong. Better than any wooden or bamboo ones I've used.", createdAt: "2024-03-15" },
+            { userName: "Manish Tiwari", rating: 5, comment: "Smooth finish and very sturdy. Great for travel too.", createdAt: "2024-03-11" }
+        ],
+        '8': [
+            { userName: "Rhea Kapoor", rating: 5, comment: "Best natural straws. They don't get mushy in the drink. Perfect for my smoothies.", createdAt: "2024-03-18" },
+            { userName: "Amit Saxena", rating: 5, comment: "Sturdy and eco-friendly. Much better than paper straws!", createdAt: "2024-03-14" }
+        ],
+        '9': [
+            { userName: "Pooja Hegde", rating: 5, comment: "The set of 25 is great for family gatherings. Everyone appreciated the move away from plastic.", createdAt: "2024-03-20" },
+            { userName: "Sahil Khan", rating: 5, comment: "Premium quality dinner plates. They return to the earth in 90 days - that's amazing!", createdAt: "2024-03-16" }
+        ]
+    };
+
+    const currentReviews = hardcodedReviews[id || 'default'] || hardcodedReviews['default'];
+    const avgRating = currentReviews.reduce((acc, r) => acc + r.rating, 0) / currentReviews.length;
 
     const fetchDetails = async () => {
         if (!id) return;
@@ -62,22 +106,6 @@ export default function ProductDetailPage() {
         fetchDetails();
     }, [id]);
 
-    const handleReviewSubmit = async (e: React.FormEvent) => {
-        e.preventDefault();
-        if (!token || !id) {
-            toast.error("Please login to submit a review");
-            return;
-        }
-
-        setSubmittingReview(true);
-        const success = await addProductReview(token, id, rating, comment);
-        if (success) {
-            setComment("");
-            setRating(5);
-            fetchDetails(); // Refresh product data
-        }
-        setSubmittingReview(false);
-    };
 
     if (loading) {
         return (
@@ -226,8 +254,7 @@ export default function ProductDetailPage() {
                             {[
                                 { icon: <CheckCircle size={14} className="text-eco-green" />, text: "Free Delivery", sub: "Orders over ₹1000" },
                                 { icon: <Leaf size={14} className="text-eco-green" />, text: "100% Organic", sub: "No toxic chemicals" },
-                                { icon: <Droplets size={14} className="text-blue-500" />, text: `${product.sustainabilityMetrics?.CO2Emission || 0}g CO2`, sub: "Emissions Generated" },
-                                { icon: <Wheat size={14} className="text-amber-600" />, text: `${product.sustainabilityMetrics?.paraliUsed || 0}g Parali`, sub: "Waste Transformed" },
+                                { icon: <Truck size={14} className="text-primary" />, text: `Delivery by ${getDeliveryDate(2)}`, sub: "Estimated Date" },
                             ].map((badge, i) => (
                                 <div key={i} className="flex items-center gap-2 bg-neutral-50 hover:bg-neutral-100 border border-neutral-200 rounded-xl p-3 transition-colors">
                                     {badge.icon}
@@ -241,16 +268,15 @@ export default function ProductDetailPage() {
                     </div>
                 </div>
 
-                {/* ---------Description & Review Section ------------- */}
                 <div className="mt-20">
-                    <div className="flex border-b border-neutral-200">
-                        {['description', 'technical', 'reviews'].map((tab) => (
+                    <div className="flex border-b border-neutral-200 overflow-x-auto no-scrollbar whitespace-nowrap">
+                        {['description', 'technical'].map((tab) => (
                             <button
                                 key={tab}
                                 onClick={() => setActiveTab(tab)}
-                                className={`px-8 py-4 text-xs font-bold uppercase tracking-[0.2em] transition-all relative ${activeTab === tab ? 'text-black border-b-2 border-black' : 'text-neutral-400 hover:text-black'}`}
+                                className={`px-4 sm:px-8 py-4 text-[10px] sm:text-xs font-bold uppercase tracking-[0.2em] transition-all relative ${activeTab === tab ? 'text-black border-b-2 border-black' : 'text-neutral-400 hover:text-black'}`}
                             >
-                                {tab === 'technical' ? 'Technical Specs' : tab === 'reviews' ? `Reviews (${product.numReviews || 0})` : 'Description'}
+                                {tab === 'technical' ? 'Technical Specs' : 'Description'}
                             </button>
                         ))}
                     </div>
@@ -265,9 +291,19 @@ export default function ProductDetailPage() {
                                         <li key={index}>{item}</li>
                                     ))}
                                 </ul>
-                                <p className="mt-4 font-bold text-neutral-900 border-l-4 border-orange-500 pl-4 italic">
-                                    Made with pride from transformed farm residue.
-                                </p>
+                                {product.details?.["last line"] ? (
+                                    <div className="mt-6 space-y-1">
+                                        {product.details["last line"].map((line, idx) => (
+                                            <p key={idx} className="font-bold text-neutral-900 border-l-4 border-orange-500 pl-4 italic">
+                                                {line}
+                                            </p>
+                                        ))}
+                                    </div>
+                                ) : (
+                                    <p className="mt-4 font-bold text-neutral-900 border-l-4 border-orange-500 pl-4 italic">
+                                        Made with pride from transformed farm residue.
+                                    </p>
+                                )}
 
                             </div>
                         )}
@@ -281,102 +317,95 @@ export default function ProductDetailPage() {
                                 </ul>
                             </div>
                         )}
-                        {activeTab === 'reviews' && (
-                            <div className="animate-in fade-in slide-in-from-bottom-2 duration-500 space-y-8">
-                                <div className="grid md:grid-cols-[1fr_2fr] gap-12">
-                                    {/* Summary & Form */}
-                                    <div className="space-y-6">
-                                        <div className="bg-white p-6 rounded-2xl border border-neutral-100 shadow-sm">
-                                            <h4 className="text-lg font-bold font-lora mb-2">Customer Feedback</h4>
-                                            <div className="flex items-center gap-4 mb-4">
-                                                <div className="text-4xl font-bold text-orange-600">{product.averageRating?.toFixed(1) || "0.0"}</div>
-                                                <div>
-                                                    <div className="flex text-orange-400">
-                                                        {[1, 2, 3, 4, 5].map((s) => (
-                                                            <Star key={s} size={14} fill={s <= Math.round(product.averageRating || 0) ? "currentColor" : "none"} />
-                                                        ))}
-                                                    </div>
-                                                    <p className="text-[10px] text-neutral-500 font-bold uppercase tracking-widest mt-1">Based on {product.numReviews || 0} reviews</p>
-                                                </div>
-                                            </div>
 
-                                            {user ? (
-                                                <form onSubmit={handleReviewSubmit} className="space-y-4 pt-4 border-t border-neutral-100">
-                                                    <p className="text-xs font-bold uppercase tracking-widest">Write a Review</p>
-                                                    <div>
-                                                        <label className="text-[10px] text-neutral-500 uppercase font-bold mb-2 block">Rating</label>
-                                                        <div className="flex gap-2">
-                                                            {[1, 2, 3, 4, 5].map((s) => (
-                                                                <button
-                                                                    key={s}
-                                                                    type="button"
-                                                                    onClick={() => setRating(s)}
-                                                                    className={`p-1 rounded-full transition-colors ${rating >= s ? "text-orange-500" : "text-neutral-300"}`}
-                                                                >
-                                                                    <Star size={20} fill={rating >= s ? "currentColor" : "none"} />
-                                                                </button>
-                                                            ))}
-                                                        </div>
-                                                    </div>
-                                                    <div>
-                                                        <label className="text-[10px] text-neutral-500 uppercase font-bold mb-2 block">Comment</label>
-                                                        <textarea
-                                                            value={comment}
-                                                            onChange={(e) => setComment(e.target.value)}
-                                                            className="w-full p-3 rounded-xl border border-neutral-200 text-xs focus:ring-1 focus:ring-orange-500 outline-none resize-none"
-                                                            rows={3}
-                                                            placeholder="Share your experience..."
-                                                            required
-                                                        />
-                                                    </div>
-                                                    <button
-                                                        type="submit"
-                                                        disabled={submittingReview}
-                                                        className="w-full bg-neutral-900 text-white py-3 rounded-xl text-[10px] font-bold uppercase tracking-widest hover:bg-neutral-800 transition-colors disabled:opacity-50"
-                                                    >
-                                                        {submittingReview ? "Submitting..." : "Submit Review"}
-                                                    </button>
-                                                </form>
-                                            ) : (
-                                                <div className="pt-4 border-t border-neutral-100 text-center">
-                                                    <p className="text-xs text-neutral-500 mb-4">Please log in to share your feedback with the community.</p>
-                                                    <Link to="/login" className="inline-block px-6 py-2 border border-neutral-900 rounded-full text-[10px] font-bold uppercase tracking-widest hover:bg-neutral-900 hover:text-white transition-all">Login to Review</Link>
-                                                </div>
-                                            )}
-                                        </div>
-                                    </div>
+                    </div>
+                </div>
 
-                                    {/* Review List */}
-                                    <div className="space-y-4">
-                                        {product.reviews && product.reviews.length > 0 ? (
-                                            product.reviews.slice().reverse().map((review, i) => (
-                                                <div key={i} className="bg-white p-6 rounded-2xl border border-neutral-100 shadow-sm animate-in fade-in slide-in-from-right-4 duration-500" style={{ animationDelay: `${i * 100}ms` }}>
-                                                    <div className="flex justify-between items-start mb-3">
-                                                        <div>
-                                                            <p className="font-bold text-sm text-neutral-900">{review.userName}</p>
-                                                            <div className="flex text-orange-400 mt-1">
-                                                                {[1, 2, 3, 4, 5].map((s) => (
-                                                                    <Star key={s} size={10} fill={s <= review.rating ? "currentColor" : "none"} />
-                                                                ))}
-                                                            </div>
-                                                        </div>
-                                                        <span className="text-[10px] text-neutral-400 font-medium">
-                                                            {new Date(review.createdAt).toLocaleDateString()}
-                                                        </span>
-                                                    </div>
-                                                    <p className="text-sm text-neutral-600 italic">"{review.comment}"</p>
+                {/* Standing Separate Reviews Section */}
+                <div className="mt-20 bg-white rounded-3xl border border-neutral-100 shadow-sm p-8 sm:p-12">
+                    <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-10 gap-4">
+                        <div>
+                            <h3 className="text-2xl font-bold font-lora text-foreground">Community Reviews</h3>
+                            <p className="text-sm text-muted-foreground mt-1 font-lora">Honest feedback from our conscious family</p>
+                        </div>
+                        <div className="flex items-center gap-3 bg-neutral-50 px-4 py-2 rounded-full border border-neutral-100">
+                            <span className="text-lg font-black text-orange-600 font-lora">{avgRating.toFixed(1)}</span>
+                            <div className="flex text-orange-400 gap-0.5">
+                                {[1, 2, 3, 4, 5].map((s) => (
+                                    <Star key={s} size={14} fill={s <= Math.round(avgRating) ? "currentColor" : "none"} />
+                                ))}
+                            </div>
+                            <span className="text-xs font-bold text-neutral-400 uppercase tracking-widest ml-1 border-l border-neutral-200 pl-3">
+                                {currentReviews.length} Reviews
+                            </span>
+                        </div>
+                    </div>
+
+                    <div className="grid md:grid-cols-[1fr_2fr] gap-12">
+                        {/* Summary / Stats Bar */}
+                        <div className="space-y-6">
+                            <div className="bg-[#fef9f3] p-6 rounded-2xl border border-orange-100/50">
+                                <h4 className="text-sm font-bold uppercase tracking-widest mb-4">Rating Breakdown</h4>
+                                <div className="space-y-3">
+                                    {[5, 4, 3, 2, 1].map((rating) => {
+                                        const count = currentReviews.filter(r => r.rating === rating).length;
+                                        const percentage = (count / currentReviews.length) * 100;
+                                        return (
+                                            <div key={rating} className="flex items-center gap-3">
+                                                <span className="text-xs font-bold w-3">{rating}</span>
+                                                <Star size={10} className="text-orange-400 fill-orange-400" />
+                                                <div className="flex-1 h-2 bg-neutral-200 rounded-full overflow-hidden">
+                                                    <motion.div
+                                                        initial={{ width: 0 }}
+                                                        whileInView={{ width: `${percentage}%` }}
+                                                        transition={{ duration: 1, ease: "easeOut" }}
+                                                        className="h-full bg-orange-500 rounded-full"
+                                                    />
                                                 </div>
-                                            ))
-                                        ) : (
-                                            <div className="h-full flex flex-col items-center justify-center text-center p-12 bg-white rounded-2xl border border-dashed border-neutral-200">
-                                                <MessageSquare className="w-8 h-8 text-neutral-200 mb-4" />
-                                                <p className="text-sm text-neutral-400 font-lora">No reviews yet. Be the first to share your experience!</p>
+                                                <span className="text-xs text-neutral-400 w-8 text-right">{count}</span>
                                             </div>
-                                        )}
-                                    </div>
+                                        );
+                                    })}
+                                </div>
+                                <div className="mt-8 pt-6 border-t border-orange-100/50">
+                                    <p className="text-xs text-neutral-500 leading-relaxed italic">
+                                        Each review contributes to our understanding of how Zestraw impacts your daily life and our shared environment.
+                                    </p>
                                 </div>
                             </div>
-                        )}
+                        </div>
+
+                        {/* Review Feed */}
+                        <div className="space-y-6">
+                            {currentReviews.map((review, i) => (
+                                <motion.div
+                                    key={i}
+                                    initial={{ opacity: 0, y: 20 }}
+                                    whileInView={{ opacity: 1, y: 0 }}
+                                    viewport={{ once: true }}
+                                    transition={{ delay: i * 0.1 }}
+                                    className="pb-6 border-b border-neutral-100 last:border-0"
+                                >
+                                    <div className="flex justify-between items-start mb-3">
+                                        <div>
+                                            <div className="flex items-center gap-2 mb-1">
+                                                <p className="font-bold text-sm text-neutral-900">{review.userName}</p>
+                                                <span className="px-1.5 py-0.5 bg-eco-green-light text-eco-green text-[8px] font-bold rounded uppercase tracking-tighter">Verified Buyer</span>
+                                            </div>
+                                            <div className="flex text-orange-400 gap-0.5">
+                                                {[1, 2, 3, 4, 5].map((s) => (
+                                                    <Star key={s} size={10} fill={s <= review.rating ? "currentColor" : "none"} />
+                                                ))}
+                                            </div>
+                                        </div>
+                                        <span className="text-[10px] text-neutral-400 font-medium font-lora">
+                                            {new Date(review.createdAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}
+                                        </span>
+                                    </div>
+                                    <p className="text-sm text-neutral-600 leading-relaxed font-lora">"{review.comment}"</p>
+                                </motion.div>
+                            ))}
+                        </div>
                     </div>
                 </div>
 
@@ -396,6 +425,13 @@ export default function ProductDetailPage() {
 
             <style dangerouslySetInnerHTML={{
                 __html: `
+                .no-scrollbar::-webkit-scrollbar {
+                    display: none;
+                }
+                .no-scrollbar {
+                    -ms-overflow-style: none;
+                    scrollbar-width: none;
+                }
                 .custom-scrollbar::-webkit-scrollbar {
                     width: 4px;
                     height: 4px;

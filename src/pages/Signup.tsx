@@ -15,6 +15,7 @@ export default function SignupPage() {
   const [accountType, setAccountType] = useState<"retail" | "b2b">("retail");
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
+  const [phoneNumber, setPhoneNumber] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -28,9 +29,14 @@ export default function SignupPage() {
     const errs: Record<string, string> = {};
     if (!fullName.trim()) errs.fullName = "Full name is required";
     if (!email.trim()) {
-      errs.email = "Email is required";
+      // Email is no longer required
     } else if (!validateEmail(email)) {
       errs.email = "Please enter a valid email address (e.g., name@example.com)";
+    }
+    if (!phoneNumber.trim()) {
+      errs.phoneNumber = "Phone number is required";
+    } else if (!/^[0-9]{10}$/.test(phoneNumber)) {
+      errs.phoneNumber = "Please enter a valid 10-digit phone number";
     }
     if (password.length < 8) errs.password = "Password must be at least 8 characters";
     if (password !== confirmPassword) errs.confirmPassword = "Passwords do not match";
@@ -45,7 +51,7 @@ export default function SignupPage() {
     if (!validate()) return;
 
     // Using the service pattern requested
-    signUp(fullName, email, password, accountType, navigate);
+    signUp(fullName, email, password, accountType, navigate, phoneNumber);
   };
 
   return (
@@ -129,7 +135,7 @@ export default function SignupPage() {
           </div>
 
           <div>
-            <label className="text-sm font-semibold mb-2 block">Full Name</label>
+            <label className="text-sm font-semibold mb-2 block">Full Name <span className="text-destructive">*</span></label>
             <input type="text" value={fullName} onChange={(e) => setFullName(e.target.value)} placeholder="Jane Doe"
               className="w-full px-4 py-3 rounded-lg border border-border bg-background text-sm focus:outline-none focus:ring-2 focus:ring-ring" />
             {errors.fullName && <p className="text-xs text-destructive mt-1">{errors.fullName}</p>}
@@ -142,9 +148,24 @@ export default function SignupPage() {
             {errors.email && <p className="text-xs text-destructive mt-1">{errors.email}</p>}
           </div>
 
+          <div>
+            <label className="text-sm font-semibold mb-2 block">Phone Number <span className="text-destructive">*</span></label>
+            <div className="relative">
+              <span className="absolute left-4 top-1/2 -translate-y-1/2 text-sm text-muted-foreground font-medium">+91</span>
+              <input
+                type="tel"
+                value={phoneNumber}
+                onChange={(e) => setPhoneNumber(e.target.value.replace(/\D/g, '').slice(0, 10))}
+                placeholder="85956 43038"
+                className="w-full pl-12 pr-4 py-3 rounded-lg border border-border bg-background text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+              />
+            </div>
+            {errors.phoneNumber && <p className="text-xs text-destructive mt-1">{errors.phoneNumber}</p>}
+          </div>
+
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="text-sm font-semibold mb-2 block">Password</label>
+              <label className="text-sm font-semibold mb-2 block">Password <span className="text-destructive">*</span></label>
               <div className="relative">
                 <input type={showPassword ? "text" : "password"} value={password} onChange={(e) => setPassword(e.target.value)} placeholder="••••••••"
                   className="w-full px-4 py-3 rounded-lg border border-border bg-background text-sm focus:outline-none focus:ring-2 focus:ring-ring pr-10" />
@@ -155,7 +176,7 @@ export default function SignupPage() {
               {errors.password && <p className="text-xs text-destructive mt-1">{errors.password}</p>}
             </div>
             <div>
-              <label className="text-sm font-semibold mb-2 block">Confirm Password</label>
+              <label className="text-sm font-semibold mb-2 block">Confirm Password <span className="text-destructive">*</span></label>
               <input type="password" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} placeholder="••••••••"
                 className="w-full px-4 py-3 rounded-lg border border-border bg-background text-sm focus:outline-none focus:ring-2 focus:ring-ring" />
               {errors.confirmPassword && <p className="text-xs text-destructive mt-1">{errors.confirmPassword}</p>}

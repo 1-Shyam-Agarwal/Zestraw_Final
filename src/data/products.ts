@@ -28,16 +28,9 @@ export interface Product {
       secondaryContent: string;
     };
     keyFeatures: string[];
-    technicalSpecifications: string[];
+    technicalSpecifications?: string[];
+    "last line"?: string[];
   };
-  reviews?: Array<{
-    userName: string;
-    rating: number;
-    comment: string;
-    createdAt: string;
-  }>;
-  averageRating?: number;
-  numReviews?: number;
   faqs?: Array<{ question: string; answer: string }>;
   stock?: number;
 }

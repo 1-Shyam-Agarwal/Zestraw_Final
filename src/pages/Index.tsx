@@ -47,13 +47,13 @@ const Index = () => {
 
               <motion.div variants={fadeUp} className="flex flex-wrap gap-6 mb-8 mt-20">
                 <Link
-                  to="/shop"
+                  to="/shop?category=ComboPack"
                   className="inline-flex items-center gap-2 px-7 py-3.5 bg-primary text-primary-foreground rounded-full font-semibold hover:bg-primary/90 transition-colors"
                 >
                   Order a Sample Kit
                 </Link>
                 <Link
-                  to="/impact"
+                  to="/shop"
                   className="inline-flex items-center gap-2 px-7 py-3.5 border border-border bg-card text-foreground rounded-full font-semibold hover:bg-accent transition-colors"
                 >
                   Shop Now
@@ -143,14 +143,14 @@ const Index = () => {
               className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8 mt-12"
             >
               {[
-                { name: "Plates", img: productPlates, badge: "Best Seller" },
-                { name: "Bowls", img: productBowls, badge: "New" },
-                { name: "Section-Plates", img: productTray },
-                { name: "Cutlery", img: cutleries },
-                { name: "Cups", img: cup },
-                { name: "Combo Pack", img: productCombo },
+                { name: "Plates", img: productPlates, badge: "Best Seller", category: "Plates" },
+                { name: "Bowls", img: productBowls, badge: "New", category: "Bowls" },
+                { name: "Section-Plates", img: productTray, category: "Section Plates" },
+                { name: "Cutlery", img: cutleries, category: "Cutlery" },
+                { name: "Cups", img: cup, category: "Cups" },
+                { name: "Combo Pack", img: productCombo, category: "ComboPack" },
               ].map((product) => (
-                <Link key={product.name} to="/shop" className="group block">
+                <Link key={product.name} to={`/shop?category=${product.category}`} className="group block">
                   <div className="relative bg-white rounded-2xl overflow-hidden border border-border/50 shadow-sm hover:shadow-xl transition-all duration-500 hover:-translate-y-1">
 
                     {/* Badge */}
@@ -266,9 +266,11 @@ const Index = () => {
 
               {/* CTA */}
               <div className="flex flex-col sm:flex-row gap-4">
-                <Button size="lg" className="px-8 text-base">
-                  Order a Sample Kit
-                </Button>
+                <Link to="/shop?category=ComboPack">
+                  <Button size="lg" className="px-8 text-base">
+                    Order a Sample Kit
+                  </Button>
+                </Link>
 
               </div>
 

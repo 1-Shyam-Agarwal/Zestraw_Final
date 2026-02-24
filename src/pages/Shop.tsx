@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo } from "react";
+import { useLocation } from "react-router-dom";
 import { Layout } from "@/components/Layout";
 import { Link } from "react-router-dom";
 import { Grid, List, ChevronRight, Leaf } from "lucide-react";
@@ -7,14 +8,15 @@ import riceField from "@/assets/rice-field.jpg";
 import ProductCard from "@/components/ProductCard";
 import { getAllProducts } from "@/services/operations/productAPI";
 
-const productTypes = ["All", "Plates", "Bowls", "Trays", "Combo Packs", "Cutlery"];
-const sortOptions = ["Newest Arrivals", "Price: Low to High", "Price: High to Low"];
+const productTypes = ["All", "Plates", "Bowls", "Section Plates", "Cups", "Cutlery", "ComboPack"];
+const sortOptions = ["Price: Low to High", "Price: High to Low"];
 
 export default function ShopPage() {
+  const location = useLocation();
   const [products, setProducts] = useState<Product[]>([]);
   const [selectedType, setSelectedType] = useState("All");
-  const [priceRange, setPriceRange] = useState([1, 150]);
-  const [sortBy, setSortBy] = useState("Newest Arrivals");
+  const [priceRange, setPriceRange] = useState([0, 500]);
+  const [sortBy, setSortBy] = useState("Price: Low to High");
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
 
   useEffect(() => {
@@ -25,25 +27,47 @@ export default function ShopPage() {
       }
     };
     fetchProducts();
-  }, []);
+
+    // Handle deep linking from categories
+    const params = new URLSearchParams(location.search);
+    const categoryParam = params.get("category");
+    if (categoryParam) {
+      // Find matching type from productTypes
+      const matched = productTypes.find(t => t.toLowerCase() === categoryParam.toLowerCase());
+      if (matched) {
+        setSelectedType(matched);
+      }
+    }
+  }, [location.search]);
 
   const filteredAndSorted = useMemo(() => {
     let result = products.filter((p) => {
-      const type = p.type || p.category;
-      if (selectedType !== "All" && type !== selectedType) return false;
+      const category = p.category || p.type || "";
+      if (selectedType !== "All" && category.toLowerCase() !== selectedType.toLowerCase()) return false;
       const price = p.productPrice || p.price || 0;
       if (price < priceRange[0] || price > priceRange[1]) return false;
       return true;
     });
 
     // Sorting
-    if (sortBy === "Price: Low to High") {
-      result.sort((a, b) => (a.productPrice || a.price || 0) - (b.productPrice || b.price || 0));
-    } else if (sortBy === "Price: High to Low") {
-      result.sort((a, b) => (b.productPrice || b.price || 0) - (a.productPrice || a.price || 0));
-    } else if (sortBy === "Newest Arrivals") {
-      // Default order
-    }
+    result.sort((a, b) => {
+      const isACutlery = (a.category || a.type || "").toLowerCase() === "cutlery";
+      const isBCutlery = (b.category || b.type || "").toLowerCase() === "cutlery";
+
+      // If one is cutlery and the other isn't, cutlery moves to the end
+      if (isACutlery && !isBCutlery) return 1;
+      if (!isACutlery && isBCutlery) return -1;
+
+      // If both are same (both cutlery or both NOT cutlery), sort by price
+      const priceA = a.productPrice || a.price || 0;
+      const priceB = b.productPrice || b.price || 0;
+
+      if (sortBy === "Price: Low to High") {
+        return priceA - priceB;
+      } else {
+        return priceB - priceA;
+      }
+    });
 
     return result;
   }, [products, selectedType, priceRange, sortBy]);
@@ -120,15 +144,15 @@ export default function ShopPage() {
                 </h3>
                 <input
                   type="range"
-                  min={1}
-                  max={150}
+                  min={0}
+                  max={500}
                   value={priceRange[1]}
                   onChange={(e) => setPriceRange([priceRange[0], parseInt(e.target.value)])}
                   className="w-full accent-primary"
                 />
                 <div className="flex justify-between text-xs text-muted-foreground mt-1">
-                  <span>{priceRange[0]}</span>
-                  <span>{priceRange[1]}+</span>
+                  <span>₹{priceRange[0]}</span>
+                  <span>₹{priceRange[1]}+</span>
                 </div>
               </div>
 
@@ -188,7 +212,7 @@ export default function ShopPage() {
               </Link>
             </div>
             <div className="relative rounded-2xl overflow-hidden">
-              <img src={riceField} alt="Rice field impact" className="w-full h-64 object-cover rounded-2xl" />
+              <img src={riceField} alt="Rice field impact" className="w-full h-80 md:h-[450px] object-cover rounded-2xl" />
               <div className="absolute bottom-4 right-4 bg-primary text-primary-foreground px-4 py-2 rounded-xl">
                 <span className="text-lg font-bold">1.2M+</span>
                 <p className="text-[10px]">KGS OF RICE STRAW UPCYCLED</p>

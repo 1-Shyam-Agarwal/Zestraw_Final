@@ -41,31 +41,3 @@ export async function getProductDetails(productId: string) {
     }
 }
 
-export async function addProductReview(token: string, productId: string, rating: number, comment: string) {
-    const toastId = toast.loading("Submitting your review...");
-    try {
-        const response = await apiConnector(
-            "POST",
-            productEndpoints.GET_PRODUCT_DETAILS_API + productId + "/reviews",
-            { rating, comment },
-            {
-                Authorization: `Bearer ${token}`,
-            }
-        );
-
-        if (!response?.data?.success) {
-            throw new Error(response.data.error || "Failed to add review");
-        }
-
-        toast.success("Review Added", {
-            id: toastId,
-            description: "Thank you for your feedback!"
-        });
-        return true;
-    } catch (error: any) {
-        console.log("ADD_PRODUCT_REVIEW_API ERROR............", error);
-        toast.error(error.response?.data?.error || error.message || "Failed to submit review");
-        toast.dismiss(toastId);
-        return false;
-    }
-}

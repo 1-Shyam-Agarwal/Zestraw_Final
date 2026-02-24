@@ -293,13 +293,17 @@ export default function OurStoryPage() {
 
 
           <div className="flex justify-center gap-4 mt-12">
-            <button className="bg-white text-black px-6 py-3 rounded-full font-semibold hover:scale-105 transition">
-              Shop Now
-            </button>
+            <Link to="/shop">
+              <button className="bg-white text-black px-6 py-3 rounded-full font-semibold hover:scale-105 transition">
+                Shop Now
+              </button>
+            </Link>
 
-            <button className="border border-white px-6 py-3 rounded-full font-semibold hover:bg-white hover:text-black transition">
-              Bulk Orders
-            </button>
+            <Link to="/bulk-orders">
+              <button className="border border-white px-6 py-3 rounded-full font-semibold hover:bg-white hover:text-black transition">
+                Bulk Orders
+              </button>
+            </Link>
           </div>
         </div>
       </section>
