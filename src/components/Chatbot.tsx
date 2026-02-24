@@ -107,17 +107,20 @@ const Chatbot = () => {
                         className="mb-4 w-[350px] sm:w-[380px] h-[500px] bg-white rounded-3xl shadow-2xl overflow-hidden border border-border flex flex-col"
                     >
                         {/* Header */}
-                        <div className="bg-primary p-4 text-white flex items-center justify-between">
+                        <div className="bg-teal-600 p-4 text-white flex items-center justify-between shadow-lg">
                             <div className="flex items-center gap-3">
-                                <div className="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center backdrop-blur-sm">
-                                    <Leaf size={20} className="text-white" />
+                                <div className="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center backdrop-blur-md border border-white/30 shadow-inner">
+                                    <Leaf size={20} className="text-white animate-bounce-slow" />
                                 </div>
                                 <div>
-                                    <h3 className="font-bold text-sm">Zestie Assistant</h3>
-                                    <p className="text-[10px] text-white/80 uppercase tracking-widest font-bold">Online & Eco-Friendly</p>
+                                    <h3 className="font-bold text-sm tracking-tight">Zestie Assistant</h3>
+                                    <div className="flex items-center gap-1.5">
+                                        <div className="w-1.5 h-1.5 bg-teal-400 rounded-full animate-pulse shadow-[0_0_8px_rgba(45,212,191,0.8)]" />
+                                        <p className="text-[9px] text-white/90 uppercase tracking-widest font-black">Active Now</p>
+                                    </div>
                                 </div>
                             </div>
-                            <button onClick={() => setIsOpen(false)} className="hover:bg-white/20 p-2 rounded-full transition-colors">
+                            <button onClick={() => setIsOpen(false)} className="hover:bg-white/20 p-2 rounded-full transition-all active:scale-90">
                                 <X size={18} />
                             </button>
                         </div>
@@ -126,8 +129,8 @@ const Chatbot = () => {
                         <div ref={scrollRef} className="flex-1 overflow-y-auto p-4 bg-[#fffaf5] space-y-4 no-scrollbar">
                             {messages.map((msg) => (
                                 <div key={msg.id} className={`flex ${msg.sender === 'user' ? 'justify-end' : 'justify-start'}`}>
-                                    <div className={`max-w-[80%] p-3 rounded-2xl ${msg.sender === 'user'
-                                        ? 'bg-primary text-white rounded-tr-none'
+                                    <div className={`max-w-[80%] p-3.5 rounded-2xl ${msg.sender === 'user'
+                                        ? 'bg-teal-600 text-white rounded-tr-none shadow-md'
                                         : 'bg-white border border-border text-foreground rounded-tl-none shadow-sm'
                                         }`}>
                                         <p className="text-sm leading-relaxed">{msg.text}</p>
@@ -140,9 +143,9 @@ const Chatbot = () => {
                             {isTyping && (
                                 <div className="flex justify-start">
                                     <div className="bg-white border border-border p-3 rounded-2xl rounded-tl-none shadow-sm flex gap-1">
-                                        <motion.div animate={{ opacity: [0.3, 1, 0.3] }} transition={{ repeat: Infinity, duration: 1 }} className="w-1.5 h-1.5 bg-primary/40 rounded-full" />
-                                        <motion.div animate={{ opacity: [0.3, 1, 0.3] }} transition={{ repeat: Infinity, duration: 1, delay: 0.2 }} className="w-1.5 h-1.5 bg-primary/40 rounded-full" />
-                                        <motion.div animate={{ opacity: [0.3, 1, 0.3] }} transition={{ repeat: Infinity, duration: 1, delay: 0.4 }} className="w-1.5 h-1.5 bg-primary/40 rounded-full" />
+                                        <motion.div animate={{ opacity: [0.3, 1, 0.3] }} transition={{ repeat: Infinity, duration: 1 }} className="w-1.5 h-1.5 bg-teal-500/40 rounded-full" />
+                                        <motion.div animate={{ opacity: [0.3, 1, 0.3] }} transition={{ repeat: Infinity, duration: 1, delay: 0.2 }} className="w-1.5 h-1.5 bg-teal-500/40 rounded-full" />
+                                        <motion.div animate={{ opacity: [0.3, 1, 0.3] }} transition={{ repeat: Infinity, duration: 1, delay: 0.4 }} className="w-1.5 h-1.5 bg-teal-500/40 rounded-full" />
                                     </div>
                                 </div>
                             )}
@@ -157,7 +160,7 @@ const Chatbot = () => {
                                             animate={{ opacity: 1, x: 0 }}
                                             transition={{ delay: i * 0.1 }}
                                             onClick={() => handleSend(s.q)}
-                                            className="text-[10px] font-bold bg-white border border-primary/20 text-primary px-3 py-2 rounded-full hover:bg-primary hover:text-white transition-all shadow-sm"
+                                            className="text-[10px] font-bold bg-white border border-teal-500/30 text-teal-600 px-3.5 py-2.5 rounded-xl hover:bg-teal-600 hover:text-white hover:border-teal-600 transition-all shadow-sm active:scale-95"
                                         >
                                             {s.q}
                                         </motion.button>
@@ -179,17 +182,17 @@ const Chatbot = () => {
                                 />
                                 <button
                                     onClick={() => handleSend()}
-                                    className="bg-primary text-white p-2 rounded-xl hover:scale-105 active:scale-95 transition-all shadow-md"
+                                    className="bg-teal-600 text-white p-2.5 rounded-xl hover:bg-teal-700 hover:scale-105 active:scale-95 transition-all shadow-lg"
                                 >
                                     <Send size={16} />
                                 </button>
                             </div>
                             <div className="flex justify-center gap-4 mt-2">
-                                <div className="text-[9px] text-muted-foreground flex items-center gap-1 uppercase font-bold tracking-tighter">
-                                    <Leaf size={10} className="text-primary" /> Sustainable Support
+                                <div className="text-[9px] text-muted-foreground flex items-center gap-1 uppercase font-black tracking-tighter">
+                                    <Leaf size={10} className="text-teal-500" /> Sustainable Support
                                 </div>
                                 <div className="text-[9px] text-muted-foreground flex items-center gap-1 uppercase font-bold tracking-tighter">
-                                    <Info size={10} className="text-primary" /> 90-day compost guide
+                                    <Info size={10} className="text-teal-500" /> 90-day compost guide
                                 </div>
                             </div>
                         </div>
@@ -199,14 +202,27 @@ const Chatbot = () => {
 
             {/* Float Button */}
             {/* Simple Float Button */}
-            <motion.button
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-                onClick={() => setIsOpen(!isOpen)}
-                className="bg-primary text-white w-14 h-14 rounded-full shadow-lg flex items-center justify-center hover:bg-primary/90 transition-colors"
-            >
-                {isOpen ? <X size={24} /> : <MessageCircle size={24} />}
-            </motion.button>
+            <div className="relative">
+                <AnimatePresence>
+                    {!isOpen && (
+                        <motion.div
+                            initial={{ scale: 0, opacity: 0 }}
+                            animate={{ scale: [1, 1.2, 1], opacity: [0.5, 0.2, 0.5] }}
+                            transition={{ repeat: Infinity, duration: 2 }}
+                            className="absolute inset-0 bg-teal-400 rounded-full blur-md"
+                        />
+                    )}
+                </AnimatePresence>
+                <motion.button
+                    whileHover={{ scale: 1.1, rotate: 5 }}
+                    whileTap={{ scale: 0.9 }}
+                    onClick={() => setIsOpen(!isOpen)}
+                    className="relative bg-teal-600 text-white w-14 h-14 rounded-full shadow-[0_8px_30px_rgb(13,148,136,0.3)] flex items-center justify-center hover:bg-teal-700 transition-all duration-300 group overflow-hidden"
+                >
+                    <div className="absolute inset-0 bg-gradient-to-tr from-white/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+                    {isOpen ? <X size={24} /> : <MessageCircle size={26} className="group-hover:drop-shadow-lg" />}
+                </motion.button>
+            </div>
         </div>
     );
 };
