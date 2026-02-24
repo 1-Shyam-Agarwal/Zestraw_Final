@@ -16,8 +16,10 @@ export interface Product {
   size?: string;
   sustainabilityMetrics?: {
     carbonFootprint: number;
+    CO2Emission?: number;
     plasticUse: number;
     plasticAvoided: number;
+    paraliUsed?: number;
   };
   details?: {
     description: {
@@ -28,6 +30,14 @@ export interface Product {
     keyFeatures: string[];
     technicalSpecifications: string[];
   };
+  reviews?: Array<{
+    userName: string;
+    rating: number;
+    comment: string;
+    createdAt: string;
+  }>;
+  averageRating?: number;
+  numReviews?: number;
   faqs?: Array<{ question: string; answer: string }>;
   stock?: number;
 }

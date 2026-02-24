@@ -6,6 +6,7 @@ import { toast } from "sonner";
 import { useAuth } from "@/context/AuthContext";
 import { login } from "@/services/operations/authAPI";
 import { Checkbox } from "@/components/ui/checkbox";
+import { validateEmail } from "@/lib/utils";
 import logo from "@/assets/logo.png";
 
 export default function LoginPage() {
@@ -22,6 +23,13 @@ export default function LoginPage() {
     if (!email || !password) {
       toast.error("Required Fields", {
         description: "Please enter both email and password to log in.",
+      });
+      return;
+    }
+
+    if (!validateEmail(email)) {
+      toast.error("Invalid Email", {
+        description: "Please enter a valid email address.",
       });
       return;
     }

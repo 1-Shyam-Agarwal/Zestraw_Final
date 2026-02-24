@@ -6,6 +6,8 @@ import { useToast } from "@/hooks/use-toast";
 import { ChevronRight, Leaf, Truck, BarChart3 } from "lucide-react";
 import wholesaleHero from "@/assets/bulkorder.webp";
 
+import { validateEmail } from "@/lib/utils";
+
 const fadeUp = { hidden: { opacity: 0, y: 30 }, visible: { opacity: 1, y: 0, transition: { duration: 0.6 } } };
 
 const pricingTiers = [
@@ -27,6 +29,15 @@ export default function BulkOrdersPage() {
     e.preventDefault();
     if (!formData.businessName || !formData.email || !formData.fullName) {
       toast({ title: "Please fill in required fields", variant: "destructive" });
+      return;
+    }
+
+    if (!validateEmail(formData.email)) {
+      toast({
+        title: "Invalid Email",
+        description: "Please enter a valid work email address.",
+        variant: "destructive"
+      });
       return;
     }
     setLoading(true);

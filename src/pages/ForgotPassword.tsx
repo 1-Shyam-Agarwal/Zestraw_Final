@@ -4,6 +4,7 @@ import { motion } from "framer-motion";
 import { Mail, ArrowRight, ChevronLeft } from "lucide-react";
 import { toast } from "sonner";
 import { getPasswordResetToken } from "@/services/operations/authAPI";
+import { validateEmail } from "@/lib/utils";
 
 export default function ForgotPasswordPage() {
   const [email, setEmail] = useState("");
@@ -12,9 +13,16 @@ export default function ForgotPasswordPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!email.trim() || !email.includes("@")) {
+    if (!email.trim()) {
+      toast.error("Email Required", {
+        description: "Please enter your email address."
+      });
+      return;
+    }
+
+    if (!validateEmail(email)) {
       toast.error("Invalid Email", {
-        description: "Please enter a valid email address to continue."
+        description: "Please enter a valid email address."
       });
       return;
     }

@@ -1,7 +1,7 @@
 /* eslint-disable no-unused-vars */
 import { useParams, Link } from "react-router-dom";
 import { useState, useEffect } from "react";
-import { Star, Minus, Plus, Heart, Truck, Leaf, ShoppingCart, ChevronDown, Droplets } from "lucide-react";
+import { Star, Minus, Plus, Heart, Truck, Leaf, ShoppingCart, ChevronDown, Droplets, Wheat, CheckCircle, MessageSquare } from "lucide-react";
 import { Product } from "@/data/products";
 import { useCart } from "@/context/CartContext";
 import ProductCard from "@/components/ProductCard";
@@ -9,11 +9,12 @@ import { Layout } from "@/components/Layout";
 import { getProductImageSrc } from "@/lib/images";
 import { toast } from "sonner";
 import { motion, AnimatePresence } from "framer-motion";
-import { getProductDetails, getAllProducts } from "@/services/operations/productAPI";
-import { CheckCircle } from "lucide-react";
+import { getProductDetails, getAllProducts, addProductReview } from "@/services/operations/productAPI";
+import { useAuth } from "@/context/AuthContext";
 
 export default function ProductDetailPage() {
     const { id } = useParams();
+    const { user, token } = useAuth();
     const [product, setProduct] = useState<Product | null>(null);
     const [relatedProducts, setRelatedProducts] = useState<Product[]>([]);
     const [loading, setLoading] = useState(true);
@@ -25,35 +26,58 @@ export default function ProductDetailPage() {
     const [quantity, setQuantity] = useState(1);
     const [activeTab, setActiveTab] = useState('description');
 
-    useEffect(() => {
-        const fetchDetails = async () => {
-            if (!id) return;
-            setLoading(true);
-            const data = await getProductDetails(id);
-            if (data) {
-                setProduct(data);
+    // Review Form State
+    const [rating, setRating] = useState(5);
+    const [comment, setComment] = useState("");
+    const [submittingReview, setSubmittingReview] = useState(false);
 
-                // Initialize gallery and set/size from data
-                const productImages = data.images || (data.image ? [data.image] : ["no-photo.jpg"]);
-                setImage(productImages[0].startsWith('http') ? productImages[0] : getProductImageSrc(productImages[0]));
+    const fetchDetails = async () => {
+        if (!id) return;
+        setLoading(true);
+        const data = await getProductDetails(id);
+        if (data) {
+            setProduct(data);
 
-                if (data.sizesAvailable && data.sizesAvailable.length > 0) {
-                    setSelectedSet(String(data.sizesAvailable[0].size));
-                }
+            // Initialize gallery and set/size from data
+            const productImages = data.images || (data.image ? [data.image] : ["no-photo.jpg"]);
+            setImage(productImages[0].startsWith('http') ? productImages[0] : getProductImageSrc(productImages[0]));
 
-                // Fetch related products (same category)
-                const allProducts = await getAllProducts();
-                if (allProducts) {
-                    const related = allProducts.filter((p: any) =>
-                        p.category === data.category && (p._id || p.id) !== id
-                    ).slice(0, 4);
-                    setRelatedProducts(related);
-                }
+            if (data.sizesAvailable && data.sizesAvailable.length > 0) {
+                setSelectedSet(String(data.sizesAvailable[0].size));
             }
-            setLoading(false);
-        };
+
+            // Fetch related products (same category)
+            const allProducts = await getAllProducts();
+            if (allProducts) {
+                const related = allProducts.filter((p: any) =>
+                    p.category === data.category && (p._id || p.id) !== id
+                ).slice(0, 4);
+                setRelatedProducts(related);
+            }
+        }
+        setLoading(false);
+    };
+
+    useEffect(() => {
         fetchDetails();
     }, [id]);
+
+    const handleReviewSubmit = async (e: React.FormEvent) => {
+        e.preventDefault();
+        if (!token || !id) {
+            toast.error("Please login to submit a review");
+            return;
+        }
+
+        setSubmittingReview(true);
+        const success = await addProductReview(token, id, rating, comment);
+        if (success) {
+            setComment("");
+            setRating(5);
+            fetchDetails(); // Refresh product data
+        }
+        setSubmittingReview(false);
+    };
 
     if (loading) {
         return (
@@ -202,8 +226,10 @@ export default function ProductDetailPage() {
                             {[
                                 { icon: <CheckCircle size={14} className="text-eco-green" />, text: "Free Delivery", sub: "Orders over ₹1000" },
                                 { icon: <Leaf size={14} className="text-eco-green" />, text: "100% Organic", sub: "No toxic chemicals" },
+                                { icon: <Droplets size={14} className="text-blue-500" />, text: `${product.sustainabilityMetrics?.CO2Emission || 0}g CO2`, sub: "Emissions Generated" },
+                                { icon: <Wheat size={14} className="text-amber-600" />, text: `${product.sustainabilityMetrics?.paraliUsed || 0}g Parali`, sub: "Waste Transformed" },
                             ].map((badge, i) => (
-                                <div key={i} className="flex items-center gap-2 bg-green-50 hover:bg-green-100 border border-green-200 rounded-xl p-3">
+                                <div key={i} className="flex items-center gap-2 bg-neutral-50 hover:bg-neutral-100 border border-neutral-200 rounded-xl p-3 transition-colors">
                                     {badge.icon}
                                     <div>
                                         <div className="text-xs font-semibold text-foreground">{badge.text}</div>
@@ -218,13 +244,13 @@ export default function ProductDetailPage() {
                 {/* ---------Description & Review Section ------------- */}
                 <div className="mt-20">
                     <div className="flex border-b border-neutral-200">
-                        {['description', 'technical'].map((tab) => (
+                        {['description', 'technical', 'reviews'].map((tab) => (
                             <button
                                 key={tab}
                                 onClick={() => setActiveTab(tab)}
                                 className={`px-8 py-4 text-xs font-bold uppercase tracking-[0.2em] transition-all relative ${activeTab === tab ? 'text-black border-b-2 border-black' : 'text-neutral-400 hover:text-black'}`}
                             >
-                                {tab === 'technical' ? 'Technical Specs' : 'Description'}
+                                {tab === 'technical' ? 'Technical Specs' : tab === 'reviews' ? `Reviews (${product.numReviews || 0})` : 'Description'}
                             </button>
                         ))}
                     </div>
@@ -253,6 +279,102 @@ export default function ProductDetailPage() {
                                         <li key={i} className="text-neutral-700">{spec}</li>
                                     )) || <p>Technical specifications coming soon for this product.</p>}
                                 </ul>
+                            </div>
+                        )}
+                        {activeTab === 'reviews' && (
+                            <div className="animate-in fade-in slide-in-from-bottom-2 duration-500 space-y-8">
+                                <div className="grid md:grid-cols-[1fr_2fr] gap-12">
+                                    {/* Summary & Form */}
+                                    <div className="space-y-6">
+                                        <div className="bg-white p-6 rounded-2xl border border-neutral-100 shadow-sm">
+                                            <h4 className="text-lg font-bold font-lora mb-2">Customer Feedback</h4>
+                                            <div className="flex items-center gap-4 mb-4">
+                                                <div className="text-4xl font-bold text-orange-600">{product.averageRating?.toFixed(1) || "0.0"}</div>
+                                                <div>
+                                                    <div className="flex text-orange-400">
+                                                        {[1, 2, 3, 4, 5].map((s) => (
+                                                            <Star key={s} size={14} fill={s <= Math.round(product.averageRating || 0) ? "currentColor" : "none"} />
+                                                        ))}
+                                                    </div>
+                                                    <p className="text-[10px] text-neutral-500 font-bold uppercase tracking-widest mt-1">Based on {product.numReviews || 0} reviews</p>
+                                                </div>
+                                            </div>
+
+                                            {user ? (
+                                                <form onSubmit={handleReviewSubmit} className="space-y-4 pt-4 border-t border-neutral-100">
+                                                    <p className="text-xs font-bold uppercase tracking-widest">Write a Review</p>
+                                                    <div>
+                                                        <label className="text-[10px] text-neutral-500 uppercase font-bold mb-2 block">Rating</label>
+                                                        <div className="flex gap-2">
+                                                            {[1, 2, 3, 4, 5].map((s) => (
+                                                                <button
+                                                                    key={s}
+                                                                    type="button"
+                                                                    onClick={() => setRating(s)}
+                                                                    className={`p-1 rounded-full transition-colors ${rating >= s ? "text-orange-500" : "text-neutral-300"}`}
+                                                                >
+                                                                    <Star size={20} fill={rating >= s ? "currentColor" : "none"} />
+                                                                </button>
+                                                            ))}
+                                                        </div>
+                                                    </div>
+                                                    <div>
+                                                        <label className="text-[10px] text-neutral-500 uppercase font-bold mb-2 block">Comment</label>
+                                                        <textarea
+                                                            value={comment}
+                                                            onChange={(e) => setComment(e.target.value)}
+                                                            className="w-full p-3 rounded-xl border border-neutral-200 text-xs focus:ring-1 focus:ring-orange-500 outline-none resize-none"
+                                                            rows={3}
+                                                            placeholder="Share your experience..."
+                                                            required
+                                                        />
+                                                    </div>
+                                                    <button
+                                                        type="submit"
+                                                        disabled={submittingReview}
+                                                        className="w-full bg-neutral-900 text-white py-3 rounded-xl text-[10px] font-bold uppercase tracking-widest hover:bg-neutral-800 transition-colors disabled:opacity-50"
+                                                    >
+                                                        {submittingReview ? "Submitting..." : "Submit Review"}
+                                                    </button>
+                                                </form>
+                                            ) : (
+                                                <div className="pt-4 border-t border-neutral-100 text-center">
+                                                    <p className="text-xs text-neutral-500 mb-4">Please log in to share your feedback with the community.</p>
+                                                    <Link to="/login" className="inline-block px-6 py-2 border border-neutral-900 rounded-full text-[10px] font-bold uppercase tracking-widest hover:bg-neutral-900 hover:text-white transition-all">Login to Review</Link>
+                                                </div>
+                                            )}
+                                        </div>
+                                    </div>
+
+                                    {/* Review List */}
+                                    <div className="space-y-4">
+                                        {product.reviews && product.reviews.length > 0 ? (
+                                            product.reviews.slice().reverse().map((review, i) => (
+                                                <div key={i} className="bg-white p-6 rounded-2xl border border-neutral-100 shadow-sm animate-in fade-in slide-in-from-right-4 duration-500" style={{ animationDelay: `${i * 100}ms` }}>
+                                                    <div className="flex justify-between items-start mb-3">
+                                                        <div>
+                                                            <p className="font-bold text-sm text-neutral-900">{review.userName}</p>
+                                                            <div className="flex text-orange-400 mt-1">
+                                                                {[1, 2, 3, 4, 5].map((s) => (
+                                                                    <Star key={s} size={10} fill={s <= review.rating ? "currentColor" : "none"} />
+                                                                ))}
+                                                            </div>
+                                                        </div>
+                                                        <span className="text-[10px] text-neutral-400 font-medium">
+                                                            {new Date(review.createdAt).toLocaleDateString()}
+                                                        </span>
+                                                    </div>
+                                                    <p className="text-sm text-neutral-600 italic">"{review.comment}"</p>
+                                                </div>
+                                            ))
+                                        ) : (
+                                            <div className="h-full flex flex-col items-center justify-center text-center p-12 bg-white rounded-2xl border border-dashed border-neutral-200">
+                                                <MessageSquare className="w-8 h-8 text-neutral-200 mb-4" />
+                                                <p className="text-sm text-neutral-400 font-lora">No reviews yet. Be the first to share your experience!</p>
+                                            </div>
+                                        )}
+                                    </div>
+                                </div>
                             </div>
                         )}
                     </div>

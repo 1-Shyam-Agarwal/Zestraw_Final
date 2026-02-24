@@ -7,6 +7,7 @@ import { toast } from "sonner";
 import { useAuth } from "@/context/AuthContext";
 import { signUp } from "@/services/operations/authAPI";
 import { Checkbox } from "@/components/ui/checkbox";
+import { validateEmail } from "@/lib/utils";
 import heroImage from "@/assets/hero-tableware.jpg"
 import logo from "@/assets/logo.png"
 
@@ -26,7 +27,11 @@ export default function SignupPage() {
   const validate = () => {
     const errs: Record<string, string> = {};
     if (!fullName.trim()) errs.fullName = "Full name is required";
-    if (!email.trim() || !email.includes("@")) errs.email = "Valid email is required";
+    if (!email.trim()) {
+      errs.email = "Email is required";
+    } else if (!validateEmail(email)) {
+      errs.email = "Please enter a valid email address (e.g., name@example.com)";
+    }
     if (password.length < 8) errs.password = "Password must be at least 8 characters";
     if (password !== confirmPassword) errs.confirmPassword = "Passwords do not match";
     if (!agreed) errs.agreed = "You must agree to the terms";
