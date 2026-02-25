@@ -37,8 +37,9 @@ const Dashboard = () => {
               const quantity = item.quantity || 0;
               const size = parseInt(item.size) || 1;
               const totalUnits = quantity * size;
-              co2 += totalUnits * 84; // 84g saved per unit
-              parali += totalUnits * 150; // 150g repurposed per unit
+
+              parali += (totalUnits * 150) / 7; // 150g repurposed per unit, divided by 7 as requested
+              co2 += (parali * 1.46); // 84g saved per unit
               plastic += totalUnits;
             });
           });
@@ -75,7 +76,7 @@ const Dashboard = () => {
               order.orderItems.forEach(item => {
                 const units = (item.quantity || 0) * (parseInt(item.size) || 1);
                 monthData.co2 += units * 84;
-                monthData.parali += units * 150;
+                monthData.parali += (units * 150) / 7;
               });
             }
           });
